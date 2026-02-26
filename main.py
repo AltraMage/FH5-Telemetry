@@ -387,6 +387,9 @@ class ForzaTelemetryApp(QWidget):
     def buffer_data(self, data: dict):
         self.sample_count += 1
 
+        # 4 decimal places had jitter in suspension data, 3 seems stable.
+        CALC_PRECISION = 3
+
         def scale_controls(val): return val * 100 / 255
         def norm_steer(val): return val * 100 / 127
         def to_mph(val): return val * 2.23694
@@ -410,6 +413,7 @@ class ForzaTelemetryApp(QWidget):
 
         for key, val in data.items():
             if key in self.data_buffer and isinstance(val, (int, float)):
+                val = round(val, CALC_PRECISION)
                 fixed_val = patch_map[key](val) if key in patch_map else val
                 self.data_buffer[key].append(fixed_val)
                 raw_snapshot[key] = fixed_val
