@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
     QTabWidget, QLabel, QTextEdit, QLineEdit, QGridLayout, QSlider, QFileDialog
 )
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QPainter, QIcon
 from struct import unpack
 import csv
 
@@ -254,6 +254,8 @@ class ForzaTelemetryApp(QWidget):
         super().__init__()
         self.setWindowTitle("FH5 Telemetry")
         self.setStyleSheet("background-color: #121212; color: #808080;")
+        self.setWindowIcon(QIcon("./img/logo.ico"))
+        
 
         self.receiver = TelemetryReceiver()
         self.receiver.data_received.connect(self.buffer_data)

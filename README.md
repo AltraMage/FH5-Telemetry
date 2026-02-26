@@ -15,7 +15,7 @@
 - 📊 **Live Graphs**: Real-time charts for engine, suspension, input, etc.
 - 💾 **CSV Logging**: Save sessions to file for playback and later review.
 - ⏪ **Replay Mode**: Open saved CSV files to view logged data with graph control.
-- 🔧 **User Controls**: Adjustable sample count, start/stop, open/clear logs, etc.
+- 🔧 **User Controls**: Adjustable sample count, start/stop, open/clear logs, change IP/port, etc.
 
 ## 📷 Preview
 
@@ -96,5 +96,4 @@ See [`LICENSE`](./LICENSE) for full details.
 
 - Torque conversion (not entirely accurate right now)
 - Fix for speed, suspension, and velocity charts (jittering at idle/standstill)
-- Input to choose port?
 - UI Improvements
