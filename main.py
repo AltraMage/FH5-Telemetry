@@ -50,8 +50,8 @@ from struct import unpack
 import csv
 
 # Defaults
-tele_IP_addr = "0.0.0.0"
-tele_port = 5607
+tele_IP_addr = "192.168.1.9"
+tele_port = 5500
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -242,11 +242,11 @@ class TelemetryChart(QWidget):
         self.series.replace(points)
 
         if self.data:
-            mn, mx = min(self.data), max(self.data)
-            if mn == mx:
-                mn -= 0.1
-                mx += 0.1
-            self.axis_y.setRange(mn, mx)
+            minimum, maximum = min(self.data), max(self.data)
+            if minimum == maximum:
+                minimum -= 0.1
+                maximum += 0.1
+            self.axis_y.setRange(minimum, maximum)
             self.axis_x.setRange(0, len(self.data))
 
 class ForzaTelemetryApp(QWidget):
@@ -313,7 +313,7 @@ class ForzaTelemetryApp(QWidget):
         ip_input = QLabel("IP:Port")
         ip_input.setAlignment(Qt.AlignLeft)
         controls.addWidget(ip_input)
-        self.changeIP = QLineEdit("127.0.0.1:5500")
+        self.changeIP = QLineEdit("")
         self.changeIP.setFixedWidth(100)
         self.changeIP.setPlaceholderText("IP:Port")
         controls.addWidget(self.changeIP)
@@ -386,13 +386,28 @@ class ForzaTelemetryApp(QWidget):
 
     def buffer_data(self, data: dict):
         self.sample_count += 1
+        imperial_toggle = False  # Set to False to show speed in metric instead of imperial
 
         def scale_controls(val): return val * 100 / 255
         def norm_steer(val): return val * 100 / 127
-        def to_mph(val): return val * 2.23694
-        def to_hp(val): return val / 745.7
+        def to_mph(val): 
+            if imperial_toggle:
+                return val * 2.23694   # MPH
+            else:
+                return val * 3.6   # KPH
+        def to_hp(val):  
+            if imperial_toggle:
+                return val / 745.7 # HP
+            else: 
+                return val  / 1000 # KW
         def clamp_zero(val): return max(val, 0)
-
+        def to_psi(val): 
+            if imperial_toggle:
+                return val   # PSI
+            else:               
+                return val / 14.504 # BAR
+            
+    
         patch_map = {
             'accel': scale_controls,
             'brake': scale_controls,
@@ -402,7 +417,7 @@ class ForzaTelemetryApp(QWidget):
             'speed': to_mph,
             'power': to_hp,
             'torque': clamp_zero,
-            'boost': clamp_zero
+            'boost': to_psi,
         }
 
         raw_snapshot = {}
