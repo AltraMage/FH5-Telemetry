@@ -49,6 +49,10 @@ from PySide6.QtGui import QPainter
 from struct import unpack
 import csv
 
+# Defaults
+tele_IP_addr = "0.0.0.0"
+tele_port = 5607
+
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -126,13 +130,13 @@ class ForzaDataPacket:
         return {prop: getattr(self, prop) for prop in self.get_props()}
 
 class TelemetryReceiver(QObject):
+    global tele_IP_addr, tele_port
     data_received = Signal(dict)
     log_message = Signal(str)
 
-    def __init__(self, ip="0.0.0.0", port=5607):
+
+    def __init__(self):
         super().__init__()
-        self.ip = ip
-        self.port = port
         self._running = False
         self.sock = None
         self.thread = None
@@ -140,6 +144,8 @@ class TelemetryReceiver(QObject):
     def start(self):
         if self._running:
             return
+        self.ip = tele_IP_addr
+        self.port = tele_port
         self._running = True
         self.thread = threading.Thread(target=self._listen_loop, daemon=True)
         self.thread.start()
@@ -249,7 +255,7 @@ class ForzaTelemetryApp(QWidget):
         self.setWindowTitle("FH5 Telemetry")
         self.setStyleSheet("background-color: #121212; color: #808080;")
 
-        self.receiver = TelemetryReceiver(ip="0.0.0.0", port=5607)
+        self.receiver = TelemetryReceiver()
         self.receiver.data_received.connect(self.buffer_data)
         self.receiver.log_message.connect(self.log)
 
@@ -297,6 +303,22 @@ class ForzaTelemetryApp(QWidget):
         self.btn_set_buflen = QPushButton("Apply")
         self.btn_set_buflen.clicked.connect(self.update_buffer_len)
         controls.addWidget(self.btn_set_buflen)
+
+        controls.addStretch()
+
+
+        # Ip / Port Changer
+        ip_input = QLabel("IP:Port")
+        ip_input.setAlignment(Qt.AlignLeft)
+        controls.addWidget(ip_input)
+        self.changeIP = QLineEdit("127.0.0.1:5500")
+        self.changeIP.setFixedWidth(100)
+        self.changeIP.setPlaceholderText("IP:Port")
+        controls.addWidget(self.changeIP)
+
+        self.btn_changeIP = QPushButton("Apply")
+        self.btn_changeIP.clicked.connect(self.update_IP_port)
+        controls.addWidget(self.btn_changeIP)
 
         controls.addStretch()
 
@@ -513,6 +535,24 @@ class ForzaTelemetryApp(QWidget):
         for chart in self.charts.values():
             chart.data.clear()
             chart.add_values([])
+
+    def update_IP_port(self, ):
+        global tele_IP_addr, tele_port
+        try:
+            ip_port = self.changeIP.text().split(":")
+            if len(ip_port) != 2:
+                raise ValueError("Invalid format. Use IP:Port")
+            print(f"IP port input: {ip_port}")
+            tele_IP_addr = ip_port[0]
+            tele_port = int(ip_port[1])
+            log.info(f"Telemetry IP/Port changed to {tele_IP_addr}:{tele_port}")
+            self.log(f"Telemetry IP/Port changed to {tele_IP_addr}:{tele_port}")
+            if self.receiver._running:
+                self.receiver.stop()
+                self.receiver.start()
+        except Exception as e:
+            log.error(f"Failed to change IP/Port: {e}")
+            self.log(f"Failed to change IP/Port: {e}")
 
     def toggle_logging(self, checked):
         if checked:
